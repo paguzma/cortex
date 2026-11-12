@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Clients{% endblock %}
+{% block body %}
+<h1>Clients</h1>
+<p class="lead">Names for the machines that talk to this cortex. Agent OS uses them to show who read or wrote each note; an unknown address shows as "client".</p>
+<table>
+  <thead><tr><th>Name</th><th>IP address</th><th></th></tr></thead>
+  <tbody>
+  {% for ip, name in clients %}
+    <tr><td>{{ name }}</td><td><code>{{ ip }}</code></td><td style="text-align:right"><form method="post" class="inline"><input type="hidden" name="ip" value="{{ ip }}"><button class="danger" name="action" value="delete">Remove</button></form></td></tr>
+  {% else %}
+    <tr><td class="muted" colspan="3">No names yet.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+<h2>Add or rename</h2>
+<form method="post">
+  <label for="name">Name</label>
+  <input id="name" name="name" placeholder="laptop" maxlength="40" required>
+  <label for="ip">IP address</label>
+  <input id="ip" name="ip" placeholder="192.168.1.20" required>
+  <p class="hint">The address this container sees. Behind Docker's port mapping or a proxy, check the Agent OS pulses to find it.</p>
+  <div class="row"><button name="action" value="set">Save</button></div>
+</form>
+{% endblock %}

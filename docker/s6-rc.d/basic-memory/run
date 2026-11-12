@@ -1,0 +1,3 @@
+#!/bin/sh
+exec /home/cortex/.local/bin/basic-memory mcp --transport streamable-http \
+  --host 127.0.0.1 --port 8766 --project cortex 2>&1

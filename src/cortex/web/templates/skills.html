@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Skills{% endblock %}
+{% block body %}
+<h1>Skills</h1>
+<p class="lead">Skills in <code>my-skills</code> reach every connected Claude Code on its next session. The <code>cortex</code> skills come with the image.</p>
+<table>
+  <thead><tr><th>Skill</th><th>Plugin</th><th>What it does</th><th></th></tr></thead>
+  <tbody>
+  {% for s in skills %}
+    <tr>
+      <td>{% if s.editable %}<a href="/setup/skills/{{ s.name }}">{{ s.name }}</a>{% else %}{{ s.name }}{% endif %}</td>
+      <td class="muted">{{ s.plugin }}</td>
+      <td>{{ s.description }}</td>
+      <td style="text-align:right">{% if s.editable %}<form method="post" action="/setup/skills/{{ s.name }}/delete" class="inline"><button class="danger">Delete</button></form>{% endif %}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+<h2>Upload a skill</h2>
+<form method="post" action="/setup/skills/upload" enctype="multipart/form-data">
+  <input type="file" name="file" accept=".zip,application/zip" required>
+  <p class="hint">A .zip with <code>SKILL.md</code> at its root or inside a single folder. Max 5 MB.</p>
+  <div class="row"><button>Upload</button></div>
+</form>
+<h2>Write a new one</h2>
+<form method="post" action="/setup/skills/new">
+  <label for="name">Name</label>
+  <input id="name" name="name" placeholder="my-skill" pattern="[a-z0-9][a-z0-9-]*" required>
+  <div class="row"><button class="secondary">Create</button></div>
+</form>
+{% endblock %}

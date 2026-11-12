@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Domains{% endblock %}
+{% block body %}
+<h1>Domains</h1>
+<p class="lead">The big areas of your memory. They grow on their own: every night the consolidation looks for groups of linked notes without a domain and names them. Notes keep the domain they have; nothing here changes unless you do it.</p>
+
+{% if proposals %}
+<h2>Waiting on you</h2>
+<table>
+  {% for p in proposals %}
+  <tr>
+    <td>{{ p.text }}</td>
+    <td style="text-align:right;white-space:nowrap">
+      {% if p.kind == 'merge' %}
+      <form method="post" class="inline"><input type="hidden" name="action" value="merge"><input type="hidden" name="source" value="{{ p.source }}"><input type="hidden" name="target" value="{{ p.target }}"><button class="secondary">Merge</button></form>
+      {% endif %}
+      <form method="post" class="inline"><input type="hidden" name="action" value="dismiss"><input type="hidden" name="id" value="{{ p.id }}"><button class="secondary">{{ 'Keep' if p.kind == 'new' else 'Dismiss' }}</button></form>
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+{% endif %}
+
+<h2>Current domains</h2>
+<table>
+  <thead><tr><th>Domain</th><th>Notes</th><th>Rename or merge into</th></tr></thead>
+  <tbody>
+  {% for name, count in domains %}
+    <tr><td>{{ name }}</td><td>{{ count }}</td><td>
+      <form method="post" class="inline" style="display:flex;gap:8px">
+        <input type="hidden" name="action" value="rename"><input type="hidden" name="source" value="{{ name }}">
+        <input name="target" placeholder="new name or an existing domain" required style="flex:1">
+        <button class="secondary" style="margin:0">Apply</button>
+      </form></td></tr>
+  {% else %}
+    <tr><td colspan="3" class="muted">No domains yet: every note is in «general».</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+<p class="hint">Typing the name of an existing domain merges both. Notes in «general» simply have no domain.</p>
+
+<h2>Groups without a domain</h2>
+{% if groups %}
+<p class="hint">Groups of at least five linked notes that have no domain. {% if cfg.routines.consolidate.enabled %}The nightly consolidation names them when it has a Claude credential;{% endif %} you can name one now.</p>
+{% for g in groups %}
+<form method="post" style="border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin:10px 0">
+  <strong>Group {{ loop.index }}</strong> <span class="muted">· {{ g.size }} notes · cohesion {{ g.cohesion }}{% if g.fits %} · its neighbours are in «{{ g.fits }}»{% endif %}</span>
+  <div class="hint">{{ g.titles|join(', ') }}{% if g.size > g.titles|length %}, …{% endif %}</div>
+  <input type="hidden" name="action" value="name-group"><input type="hidden" name="id" value="{{ g.id }}">
+  <div class="row" style="margin-top:8px"><input name="name" placeholder="{{ g.fits or 'domain name' }}" required style="flex:1"><button style="margin:0">Name it</button></div>
+</form>
+{% endfor %}
+{% else %}
+<p class="muted">None right now.</p>
+{% endif %}
+{% endblock %}

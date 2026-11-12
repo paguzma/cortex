@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Setup{% endblock %} · {{ cfg.instance.name }}</title>
+<style>
+:root{--bg:#fafaf9;--fg:#1c1917;--muted:#78716c;--line:#e7e5e4;--accent:#4f46e5;--ok:#15803d;--warn:#b45309;--bad:#b91c1c;--card:#fff}
+@media (prefers-color-scheme:dark){:root{--bg:#161412;--fg:#f5f5f4;--muted:#a8a29e;--line:#3a3532;--accent:#a5b4fc;--ok:#4ade80;--warn:#fbbf24;--bad:#f87171;--card:#1f1c19}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.55 system-ui,-apple-system,sans-serif}
+nav{display:flex;gap:18px;align-items:center;flex-wrap:wrap;padding:12px 16px;border-bottom:1px solid var(--line)}
+nav a{color:var(--fg);text-decoration:none}
+nav .brand{font-weight:700;letter-spacing:.02em}
+nav form{margin-left:auto}
+main{max-width:760px;margin:0 auto;padding:28px 16px 64px}
+h1{font-size:1.5rem;margin:0 0 4px} h2{font-size:1.1rem;margin:28px 0 8px}
+p.lead{color:var(--muted);margin-top:0}
+a{color:var(--accent)}
+label{display:block;margin:14px 0 4px;font-weight:600}
+.hint{color:var(--muted);font-size:.9em;margin:2px 0 0}
+input,select,textarea{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:inherit;font:inherit}
+textarea{min-height:340px;font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+button{padding:9px 16px;border:1px solid var(--accent);border-radius:8px;background:var(--accent);color:var(--bg);font:inherit;font-weight:600;cursor:pointer}
+button.secondary{background:transparent;color:var(--accent)}
+button.danger{background:transparent;color:var(--bad);border-color:var(--bad)}
+.msg{padding:10px 14px;border:1px solid var(--line);border-left:4px solid var(--muted);border-radius:8px;margin:16px 0;background:var(--card)}
+.msg.ok{border-left-color:var(--ok)} .msg.bad{border-left-color:var(--bad)}
+.ok{color:var(--ok)} .warn{color:var(--warn)} .bad{color:var(--bad)} .muted{color:var(--muted)}
+pre,code.token{display:block;overflow-x:auto;padding:12px;border:1px solid var(--line);border-radius:8px;background:var(--card);font:13px/1.5 ui-monospace,Menlo,monospace;word-break:break-all;white-space:pre-wrap}
+table{width:100%;border-collapse:collapse} td,th{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+.steps{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 20px;padding:0;list-style:none}
+.steps li{padding:4px 10px;border:1px solid var(--line);border-radius:999px;color:var(--muted);font-size:.9em}
+.steps li.current{border-color:var(--accent);color:var(--accent);font-weight:600}
+fieldset{border:1px solid var(--line);border-radius:8px;padding:6px 14px 14px;margin-top:14px}
+.inline{display:inline}
+</style>
+</head>
+<body>
+{% if logged %}
+<nav>
+  <a class="brand" href="/setup">cortex</a>
+  <a href="/setup/secrets">Secrets</a>
+  <a href="/setup/skills">Skills</a>
+  <a href="/setup/routines">Routines</a>
+  <a href="/setup/connect">Connect</a>
+  <a href="/setup/domains">Domains</a>
+  <a href="/setup/clients">Clients</a>
+  <a href="/setup/health">Health</a>
+  <a href="/os/">Agent OS</a>
+  <form method="post" action="/setup/logout"><button class="secondary">Sign out</button></form>
+</nav>
+{% endif %}
+<main>
+{% if msg %}<div class="msg {% if ok %}ok{% elif ok is sameas false %}bad{% endif %}" role="status">{{ msg }}</div>{% endif %}
+{% block body %}{% endblock %}
+</main>
+</body>
+</html>

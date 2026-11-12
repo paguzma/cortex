@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}{{ row.name }}{% endblock %}
+{% block body %}
+<h1>{{ row.name }}</h1>
+<p class="lead">{{ {'consolidate': 'Nightly reorganization: duplicates, superseded facts, episode archive and INDEX fixes. A deterministic check decides whether it passed.', 'clean': 'Tidies up to two notes a night and moves strikethrough lines to the history. Proposes only until you let it apply.', 'snapshot': 'Commits every change to the vault and pushes it to your remote, if you set one.'}[row.name] }}</p>
+{% if row.state == 'no-credential' %}<div class="msg">Off until you add a Claude credential in <a href="/setup/wizard/3">setup step 3</a>.</div>{% endif %}
+{% if row.state == 'running' %}<div class="msg ok">Running now.</div>{% endif %}
+{% if row.state == 'invalid-schedule' %}<div class="msg bad">Not running: the saved schedule <code>{{ row.settings.schedule }}</code> is not valid, so it was left out of the crontab. Save a valid one, or turn it off.</div>{% endif %}
+<form method="post">
+  <label><input type="checkbox" name="enabled" style="width:auto" {{ 'checked' if row.settings.enabled }}> Enabled</label>
+  <label for="schedule">Schedule (cron)</label>
+  <input id="schedule" name="schedule" value="{{ row.settings.schedule }}" required>
+  <p class="hint">Five fields: minute hour day month weekday. <code>30 4 * * *</code> is 04:30 every day.</p>
+  {% if needs_claude %}
+  <label for="model">Model</label>
+  <input id="model" name="model" value="{{ row.settings.model }}" placeholder="inherits {{ cfg.claude.model }}">
+  <p class="hint">Leave empty to use the global model. Use the most capable one you have.</p>
+  {% endif %}
+  {% if row.name == 'clean' %}
+  <label><input type="checkbox" name="apply" style="width:auto" {{ 'checked' if row.settings.apply }}> Apply changes</label>
+  <p class="hint">Off: it only writes proposals you can read below. On: it applies them when its validator agrees.</p>
+  {% endif %}
+  <div class="row"><button>Save</button></div>
+</form>
+<form method="post" action="/setup/routines/{{ row.name }}/run"><div class="row"><button class="secondary" {{ 'disabled' if row.state not in ('ready', 'invalid-schedule') }}>Run now</button></div></form>
+<h2>Last {{ history|length }} runs</h2>
+{% for item in history %}
+<details>
+  <summary><span class="{{ 'ok' if item.status == 'ok' else 'bad' }}">{{ item.status }}</span> · {{ item.age }} · {{ item.summary }}</summary>
+  {% if item.detail %}<pre>{{ item.detail }}</pre>{% else %}<p class="muted">No detail.</p>{% endif %}
+</details>
+{% else %}
+<p class="muted">It has not run yet.</p>
+{% endfor %}
+{% endblock %}

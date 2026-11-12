@@ -1,0 +1,5 @@
+#!/bin/sh
+# --proxy-headers: request.client y el scheme salen de los X-Forwarded-* que pone Caddy,
+# así que valen lo que valga CORTEX_TRUSTED_PROXIES. No decidas auth por IP ni por scheme.
+exec /usr/local/bin/uvicorn --factory cortex.web.app:create_app \
+  --host 127.0.0.1 --port 8701 --proxy-headers --forwarded-allow-ips 127.0.0.1 2>&1

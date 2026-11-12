@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Claim{% endblock %}
+{% block body %}
+<h1>Claim this cortex</h1>
+<p class="lead">This instance has no owner yet. Paste the setup code printed in the container logs (<code>docker compose logs cortex</code>) and choose the admin password.</p>
+<form method="post">
+  <label for="code">Setup code</label>
+  <input id="code" name="code" autocomplete="off" placeholder="XXXX-XXXX" required>
+  <label for="password">Admin password</label>
+  <input id="password" name="password" type="password" minlength="12" autocomplete="new-password" required>
+  <p class="hint">At least 12 characters.</p>
+  <label for="password2">Repeat the password</label>
+  <input id="password2" name="password2" type="password" minlength="12" autocomplete="new-password" required>
+  <div class="row"><button>Claim</button></div>
+</form>
+{% endblock %}

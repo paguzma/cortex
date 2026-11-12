@@ -1,0 +1,63 @@
+{
+	admin off
+	auto_https off
+	persist_config off
+
+	# Detrás de un proxy (tailscale serve, tu propio HTTPS) todo llega desde el gateway de
+	# Docker: la IP real del cliente viene en X-Forwarded-For y Agent OS la necesita para
+	# saber qué máquina leyó o escribió. La confianza es opt-in: sin CORTEX_TRUSTED_PROXIES
+	# no se cree a nadie y client_ip es la IP de la conexión. Si la defines, publica el
+	# puerto solo en loopback: quien llegue directo desde una IP de confianza puede inventar
+	# X-Forwarded-For. Strict lee de derecha a izquierda, así que quien pasa por el proxy
+	# no puede anteponer otra IP.
+	servers {
+		trusted_proxies static {$CORTEX_TRUSTED_PROXIES}
+		trusted_proxies_strict
+	}
+}
+
+:8700 {
+	log {
+		output file /data/state/logs/access.log {
+			roll_size 10MiB
+			roll_keep 5
+		}
+		format json
+	}
+
+	# MCP de memoria: Bearer CORTEX_MCP_TOKEN, validado por la UI.
+	handle /mcp* {
+		forward_auth 127.0.0.1:8701 {
+			uri /auth/mcp
+		}
+		reverse_proxy 127.0.0.1:8766 {
+			header_up Host 127.0.0.1:8766
+			flush_interval -1
+			transport http {
+				read_timeout 1h
+			}
+		}
+	}
+
+	# El marketplace (/plugins.git) lo sirve la UI con git «smart» y Basic auth.
+
+	# Agent OS: la misma sesión de admin que /setup; muestra el texto de las notas.
+	redir /os /os/ 308
+	handle_path /os/* {
+		forward_auth 127.0.0.1:8701 {
+			uri /auth/session
+		}
+		reverse_proxy 127.0.0.1:8702 {
+			flush_interval -1
+		}
+	}
+
+	# Endpoints internos de autenticación: nunca se exponen.
+	handle /auth/* {
+		respond 404
+	}
+
+	handle {
+		reverse_proxy 127.0.0.1:8701
+	}
+}

@@ -1,0 +1,23 @@
+services:
+  cortex:
+    build: .
+    image: cortex:local
+    restart: unless-stopped
+    ports:
+      # Docker se salta el firewall del host: publica solo donde lo necesites,
+      # por ejemplo "127.0.0.1:8700:8700" si lo pones detrás de tu propio proxy.
+      - "8700:8700"
+    environment:
+      # Solo detrás de un proxy (tailscale serve, tu HTTPS): IPs/rangos desde los que
+      # Caddy acepta X-Forwarded-For, separados por espacios. Se define en .env, p. ej.
+      # CORTEX_TRUSTED_PROXIES=172.18.0.1 (el gateway de `docker network inspect
+      # <proyecto>_default`; <proyecto> es el nombre del proyecto compose, por defecto esta
+      # carpeta). Publica entonces en "127.0.0.1:8700:8700": si no, cualquiera de la LAN
+      # puede falsificar su IP. Vacía (por defecto) no se confía en nadie. Tras editar .env,
+      # `docker compose up -d` recrea el contenedor; `restart` no toma el valor nuevo.
+      CORTEX_TRUSTED_PROXIES: ${CORTEX_TRUSTED_PROXIES:-}
+    volumes:
+      - cortex-data:/data
+
+volumes:
+  cortex-data: {}

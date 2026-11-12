@@ -1,0 +1,3 @@
+#!/bin/sh
+export CORTEX_AGENTOS_PORT=8702
+exec /usr/local/bin/cortex-agentos 2>&1

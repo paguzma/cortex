@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Connect{% endblock %}
+{% block body %}
+<h1>Connect a machine</h1>
+<p class="lead">Everything below is specific to this instance ({{ base_url }}). Treat the tokens like passwords.</p>
+
+<h2>Claude Code</h2>
+<p>Merge this into <code>~/.claude/settings.json</code>, then open a Claude Code session and run <code>/plugin install cortex@cortex</code> and <code>/plugin install my-skills@cortex</code>.</p>
+<pre>{{ settings }}</pre>
+
+<h2>Other MCP clients</h2>
+<p>MCP over HTTP at <code>{{ base_url }}/mcp</code> with the header <code>Authorization: Bearer &lt;MCP token&gt;</code>. Without the skills, the client should read <code>SCHEMA.md</code> before writing.</p>
+
+<h2>Tokens</h2>
+<label>MCP token (read and write the vault)</label>
+<code class="token" data-token="mcp">{{ mcp_token }}</code>
+<label>Plugins token (read the marketplace)</label>
+<code class="token" data-token="plugins">{{ plugins_token }}</code>
+<form method="post" onsubmit="return confirm('Every connected client will stop working until you update it. Continue?')">
+  <div class="row"><button class="danger">Regenerate tokens</button></div>
+</form>
+{% endblock %}

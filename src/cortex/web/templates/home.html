@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+{% block body %}
+<h1>{{ cfg.instance.name }}</h1>
+<p class="lead">{{ cfg.instance.base_url }} · {{ cfg.instance.timezone }}</p>
+{% include "_health_table.html" %}
+<h2>Next</h2>
+<ul>
+  <li><a href="/setup/connect">Connect a machine</a></li>
+  <li><a href="/setup/skills">Add your skills</a></li>
+  <li><a href="/setup/wizard/1">Run the setup again</a></li>
+</ul>
+{% endblock %}

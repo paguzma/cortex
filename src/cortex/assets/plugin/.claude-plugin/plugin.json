@@ -1,0 +1,8 @@
+{
+  "name": "cortex",
+  "description": "Memoria cortex: skills /mem-*, el INDEX al iniciar sesión y el MCP de esta instancia",
+  "version": "0.1.5",
+  "author": {
+    "name": "cortex"
+  }
+}

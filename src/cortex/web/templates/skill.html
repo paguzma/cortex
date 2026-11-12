@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}{{ name }}{% endblock %}
+{% block body %}
+<h1>{{ name }}</h1>
+<p class="lead">{{ 'New skill in my-skills.' if is_new else 'Editing SKILL.md in my-skills.' }} The frontmatter needs <code>name: {{ name }}</code> and a <code>description</code>.</p>
+<form method="post">
+  <textarea name="text" spellcheck="false">{{ text }}</textarea>
+  <div class="row"><button>Save and publish</button><a href="/setup/skills" style="align-self:center">Cancel</a></div>
+</form>
+{% endblock %}

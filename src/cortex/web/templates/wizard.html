@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Setup · {{ steps[step] }}{% endblock %}
+{% block body %}
+<h1>Set up cortex</h1>
+<ol class="steps">
+{% for n, label in steps.items() %}<li class="{{ 'current' if n == step }}"><a href="/setup/wizard/{{ n }}" style="color:inherit;text-decoration:none">{{ n }}. {{ label }}</a></li>{% endfor %}
+</ol>
+<form method="post">
+{% if step == 1 %}
+  <p class="lead">How this instance is named and how your clients reach it.</p>
+  <label for="name">Name</label>
+  <input id="name" name="name" value="{{ cfg.instance.name }}">
+  <label for="timezone">Time zone</label>
+  <input id="timezone" name="timezone" value="{{ cfg.instance.timezone }}" placeholder="America/Santiago" required>
+  <p class="hint">An IANA name. Routines run on this clock.</p>
+  <label for="base_url">Base URL</label>
+  <input id="base_url" name="base_url" value="{{ cfg.instance.base_url }}" placeholder="http://192.168.1.20:8700" required>
+  <p class="hint">The address your other machines use to reach this container, including the port or your proxy's domain.</p>
+  <div class="row"><button>Continue</button></div>
+
+{% elif step == 2 %}
+  <p class="lead">Where cortex keeps the secrets its routines need.</p>
+  <fieldset>
+    <label><input type="radio" name="backend" value="local" style="width:auto" {{ 'checked' if cfg.secrets_backend == 'local' }}> Local file</label>
+    <p class="hint">Values live in <code>/data/config/secrets.env</code> and are edited from the Secrets page.</p>
+    <label><input type="radio" name="backend" value="infisical" style="width:auto" {{ 'checked' if cfg.secrets_backend == 'infisical' }}> Infisical</label>
+    <p class="hint">Values live in your Infisical project; cortex reads them with a machine identity.</p>
+  </fieldset>
+  <h2>Infisical (only if selected)</h2>
+  <label for="url">Infisical URL</label>
+  <input id="url" name="url" value="{{ cfg.infisical.url }}" placeholder="https://secrets.example.com">
+  <label for="project_id">Project ID</label>
+  <input id="project_id" name="project_id" value="{{ cfg.infisical.project_id }}">
+  <label for="environment">Environment</label>
+  <input id="environment" name="environment" value="{{ cfg.infisical.environment }}">
+  <label for="client_id">Machine identity client ID</label>
+  <input id="client_id" name="client_id" autocomplete="off" placeholder="leave empty to keep the current one">
+  <label for="client_secret">Machine identity client secret</label>
+  <input id="client_secret" name="client_secret" type="password" autocomplete="off" placeholder="leave empty to keep the current one">
+  <div class="row"><button name="action" value="save">Continue</button><button class="secondary" name="action" value="test">Test connection</button></div>
+
+{% elif step == 3 %}
+  <p class="lead">Optional. cortex runs the Claude Code CLI only for its maintenance routines (nightly consolidation and cleanup). Without a credential everything else works and those routines stay off.</p>
+  <p class="hint">Usage is billed to your own account: your subscription with a token from <code>claude setup-token</code> (valid about a year), or your API billing with an API key.</p>
+  <label for="model">Model for routines</label>
+  <input id="model" name="model" value="{{ cfg.claude.model }}">
+  <p class="hint">Use the most capable model you have. These routines rewrite your memory and a weak model degrades it. The default alias <code>opus</code> follows the latest Opus.</p>
+  {% if cfg.secrets_backend == 'local' %}
+    <fieldset>
+      <label><input type="radio" name="kind" value="oauth" style="width:auto" checked> Subscription token (<code>CLAUDE_CODE_OAUTH_TOKEN</code>)</label>
+      <label><input type="radio" name="kind" value="api" style="width:auto"> API key (<code>ANTHROPIC_API_KEY</code>)</label>
+    </fieldset>
+    <label for="value">Credential</label>
+    <input id="value" name="value" type="password" autocomplete="off" placeholder="{{ 'a ' ~ credential ~ ' is saved; leave empty to keep it' if credential else 'paste it here' }}">
+  {% else %}
+    <p class="msg">You are using Infisical: create <code>CLAUDE_CODE_OAUTH_TOKEN</code> or <code>ANTHROPIC_API_KEY</code> in your project, then test here.</p>
+  {% endif %}
+  <div class="row"><button name="action" value="save">Continue</button><button class="secondary" name="action" value="test">Test Claude</button><button class="secondary" name="action" value="skip">Skip</button></div>
+
+{% elif step == 4 %}
+  <p class="lead">Optional. Every change to the vault is committed locally; with a remote, cortex also pushes it there.</p>
+  <label for="remote_url">Git remote (SSH)</label>
+  <input id="remote_url" name="remote_url" value="{{ cfg.git_remote.url }}" placeholder="git@github.com:you/my-vault.git">
+  {% if public_key %}
+    <label>Deploy key</label>
+    <code class="token">{{ public_key }}</code>
+    <p class="hint">Add it to the remote repository as a deploy key with write access.</p>
+  {% endif %}
+  <div class="row"><button name="action" value="finish">Finish</button><button class="secondary" name="action" value="key">Show deploy key</button><button class="secondary" name="action" value="test">Test remote</button></div>
+{% endif %}
+</form>
+{% endblock %}

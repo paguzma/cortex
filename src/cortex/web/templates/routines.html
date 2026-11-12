@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Routines{% endblock %}
+{% block body %}
+<h1>Routines</h1>
+<p class="lead">Maintenance that runs inside this container on the {{ cfg.instance.timezone }} clock. Two of them use Claude; without a credential they stay off.</p>
+<table>
+  <thead><tr><th>Routine</th><th>State</th><th>Schedule</th><th>Last run</th></tr></thead>
+  <tbody>
+  {% for r in rows %}
+    <tr>
+      <td><a href="/setup/routines/{{ r.name }}">{{ r.name }}</a>{% if r.model %}<div class="hint">{{ r.model }}</div>{% endif %}</td>
+      <td class="{{ 'ok' if r.state in ('ready', 'running') else 'bad' if r.state == 'invalid-schedule' else 'muted' }}">{{ {'ready': 'on', 'running': 'running', 'disabled': 'off', 'no-credential': 'off (no credential)', 'invalid-schedule': 'not running (invalid schedule)'}[r.state] }}{% if r.name == 'clean' and r.settings.apply %}<div class="hint">applies changes</div>{% elif r.name == 'clean' %}<div class="hint">proposes only</div>{% endif %}</td>
+      <td><code>{{ r.settings.schedule }}</code></td>
+      <td>{% if r.last %}<span class="{{ 'ok' if r.last.status == 'ok' else 'bad' }}">{{ r.last.status }}</span> · {{ r.age }}<div class="hint">{{ r.last.summary }}</div>{% else %}<span class="muted">never</span>{% endif %}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+<h2>Failure alerts</h2>
+<form method="post">
+  <label for="alert_url">Alert URL</label>
+  <input id="alert_url" name="alert_url" value="{{ cfg.alert_url }}" placeholder="https://ntfy.sh/my-topic">
+  <p class="hint">cortex POSTs <code>{"instance", "routine", "status", "summary", "ts"}</code> as JSON when a routine fails. Works with ntfy, n8n or any webhook. Leave empty to turn alerts off.</p>
+  <div class="row"><button>Save</button></div>
+</form>
+{% endblock %}

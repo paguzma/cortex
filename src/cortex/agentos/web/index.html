@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent OS</title>
+<!--
+  Panel de solo lectura de una instancia cortex.
+
+  Regla de oro: MUESTRA, NUNCA ALMACENA. Todo sale de data/state.json, que escribe el
+  recolector leyendo las fuentes de verdad (el vault, los reportes de rutinas, los logs).
+  Si este panel se cae no se pierde ningún dato, y si una fuente falla se muestra su
+  último valor CON su edad en vez de inventar un cero.
+
+  Un solo HTML y un solo JS a propósito: sin build, sin dependencias, sin CDN. Todas las
+  URLs son relativas: el proxy lo publica bajo /os/.
+-->
+<style>
+  :root{
+    --bg:#0b0d10; --panel:#121519; --border:#1e242b;
+    --text:#e6e9ed; --muted:#8b949e; --faint:#5a636d;
+    --accent:#ff7a2f; --ok:#3fb950; --bad:#f85149; --warn:#d29922;
+    --r:10px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    background:var(--bg); color:var(--text);
+    font:13px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+    display:flex; flex-direction:column; overflow:hidden;
+  }
+  /* --- barra superior --- */
+  header{
+    display:flex; align-items:center; gap:18px; padding:10px 18px;
+    border-bottom:1px solid var(--border); background:var(--panel); flex:0 0 auto;
+  }
+  .chips{display:flex; gap:14px; margin-left:auto; flex-wrap:wrap}
+  .chip{display:flex; align-items:center; gap:6px; font-size:11px; color:var(--muted);
+        letter-spacing:.08em; text-transform:uppercase}
+  .chip b{color:var(--text); font-weight:600}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--ok);flex:0 0 auto;
+       box-shadow:0 0 0 0 currentColor}
+  .dot.fresh{animation:beat 2.4s ease-out infinite}
+  .dot.bad{background:var(--bad)} .dot.stale{background:var(--warn)}
+  .dot.running{background:var(--warn); animation:blink .9s ease-in-out infinite; box-shadow:0 0 8px var(--warn)}
+  .dot.off{background:var(--faint)}
+  @keyframes blink{0%,100%{opacity:1} 50%{opacity:.25}}
+  @keyframes beat{0%{box-shadow:0 0 0 0 rgba(63,185,80,.45)}70%{box-shadow:0 0 0 7px rgba(63,185,80,0)}100%{box-shadow:0 0 0 0 rgba(63,185,80,0)}}
+
+  main{flex:1; display:grid; grid-template-columns:270px 1fr 310px; gap:12px;
+       padding:12px; min-height:0}
+  .col{display:flex; flex-direction:column; gap:12px; min-height:0; overflow:auto}
+  .box{background:var(--panel); border:1px solid var(--border); border-radius:var(--r);
+       padding:12px 14px}
+  .box h2{margin:0 0 10px; font-size:10px; letter-spacing:.16em; text-transform:uppercase;
+          color:var(--muted); font-weight:600; display:flex; align-items:center; gap:8px}
+  .box h2 .age{margin-left:auto; color:var(--faint); letter-spacing:.04em; font-weight:400}
+  .box h2 .age.stale{color:var(--warn)}
+
+  .figure{font-size:30px; font-weight:300; letter-spacing:-.02em; line-height:1.1}
+  .figure small{font-size:12px; color:var(--muted); margin-left:5px; font-weight:400}
+  .figure.warn{color:var(--warn)} .figure.bad{color:var(--bad)}
+  .row{display:flex; justify-content:space-between; align-items:baseline; gap:10px;
+       padding:4px 0; border-bottom:1px solid rgba(255,255,255,.035); font-size:12px}
+  .row:last-child{border-bottom:0}
+  .row .k{color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .row .v{font-variant-numeric:tabular-nums; white-space:nowrap}
+  .tag{font-size:9px; letter-spacing:.1em; text-transform:uppercase; color:var(--faint);
+       border:1px solid var(--border); border-radius:4px; padding:1px 5px}
+  .ok{color:var(--ok)} .bad{color:var(--bad)} .warn{color:var(--warn)}
+  .empty{color:var(--faint); font-size:11px; font-style:italic}
+  .hint{color:var(--faint); font-size:10px; margin-top:6px; line-height:1.4}
+
+  /* --- centro: el grafo --- */
+  .center{position:relative; background:#0d1014; border:1px solid var(--border);
+          border-radius:var(--r); display:flex; flex-direction:column; min-height:0; overflow:hidden}
+  .center:fullscreen{border-radius:0}
+  .title{text-align:center; padding:8px 0 2px}
+  .title .t1{font:600 24px ui-sans-serif,system-ui,sans-serif; letter-spacing:.32em; color:var(--text)}
+  .title .t1 em{font-style:normal; color:var(--accent)}
+  .title .t2{font:10px ui-monospace,Menlo,monospace; letter-spacing:.3em; color:var(--faint); margin-top:3px; text-transform:uppercase}
+  .toolbar{display:flex; align-items:center; gap:8px; padding:9px 12px 6px; flex-wrap:wrap}
+  .group{display:flex; border:1px solid var(--border); border-radius:6px; overflow:hidden}
+  .group .btn{border:0; border-radius:0; border-right:1px solid var(--border)}
+  .group .btn:last-child{border-right:0}
+  .lbl{font:10px ui-monospace,Menlo,monospace; color:var(--faint); letter-spacing:.14em; text-transform:uppercase; margin-right:2px}
+  .btn{background:transparent; border:1px solid var(--border); color:var(--muted);
+       border-radius:6px; padding:4px 10px; font:10px ui-monospace,Menlo,monospace; letter-spacing:.1em;
+       text-transform:uppercase; cursor:pointer; transition:all .18s ease; white-space:nowrap}
+  .btn:hover{color:var(--text); background:#161b21}
+  .btn.on{background:var(--accent); border-color:var(--accent); color:#17120d; font-weight:600}
+  .btn.toggle.on{background:transparent; color:var(--accent); border-color:var(--accent)}
+  .tools{display:flex; gap:6px; align-items:center; margin-left:auto; flex-wrap:wrap}
+  .search{position:relative}
+  .search input{background:#0b0d10; border:1px solid var(--border); color:var(--text); border-radius:6px;
+                padding:4px 9px; font:11px ui-monospace,Menlo,monospace; width:150px; outline:none; transition:width .2s, border-color .2s}
+  .search input:focus{border-color:var(--accent); width:210px}
+  #results{position:absolute; right:0; top:calc(100% + 4px); width:300px; z-index:5; background:#111519;
+           border:1px solid #2a323b; border-radius:8px; padding:4px; box-shadow:0 12px 30px rgba(0,0,0,.5)}
+  #results div{display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:5px; cursor:pointer;
+               font:11px ui-monospace,Menlo,monospace; color:var(--text)}
+  #results div:hover{background:#1a2027}
+  #results i{width:7px; height:7px; border-radius:50%; flex:0 0 auto}
+  #results small{margin-left:auto; color:var(--faint)}
+  #results .none{color:var(--faint); cursor:default}
+  .legends{display:flex; flex-direction:column; gap:5px; padding:0 12px 8px}
+  .legend{display:flex; gap:6px; flex-wrap:wrap}
+  .legend span{display:flex; align-items:center; gap:6px; font:10px ui-monospace,Menlo,monospace; color:var(--muted);
+               cursor:pointer; border:1px solid var(--border); border-radius:5px; padding:2px 7px; transition:all .2s}
+  .legend span:hover{color:var(--text); border-color:#2d353e}
+  .legend span.off{opacity:.35}
+  .legend span.sel{color:var(--text); border-color:var(--muted)}
+  .legend i{width:7px;height:7px;border-radius:50%}
+  .types span{border-color:transparent}
+  .shape{width:14px; height:14px; flex:0 0 auto}   /* lo dibuja shape() de app.js, igual que en el grafo */
+  .live{font:10px ui-monospace,Menlo,monospace; letter-spacing:.08em; text-transform:uppercase; display:flex; align-items:center; gap:6px}
+  .live::before{content:''; width:7px; height:7px; border-radius:50%; background:var(--warn)}
+  .live.yes{color:var(--ok)} .live.yes::before{background:var(--ok); animation:beat 2.4s ease-out infinite}
+  .live.no{color:var(--warn)}
+  .canvasBox{position:relative; flex:1; min-height:0}
+  #canvas{position:absolute; inset:0; width:100%; height:100%; display:block; cursor:grab; touch-action:none}
+  .footer{padding:7px 14px; border-top:1px solid var(--border); color:var(--faint);
+          font:10px ui-monospace,Menlo,monospace; letter-spacing:.06em; display:flex; gap:16px; justify-content:space-between; flex-wrap:wrap}
+  .footer .help{opacity:.7}
+  #tip{position:absolute; z-index:4; pointer-events:none; background:rgba(17,21,25,.95); border:1px solid #2a323b;
+       border-radius:6px; padding:6px 9px; max-width:280px; font:11px ui-monospace,Menlo,monospace}
+  #tip b{display:block; color:var(--text); font-weight:600}
+  #tip span{color:var(--faint); font-size:10px}
+  #tip em{display:block; color:var(--muted); font-style:normal; margin-top:4px; line-height:1.4}
+  #card{position:absolute; right:12px; bottom:40px; width:330px; max-height:calc(100% - 140px); overflow:auto; z-index:4;
+        background:rgba(17,21,25,.97); border:1px solid #2a323b; border-radius:10px; padding:12px 14px;
+        box-shadow:0 16px 40px rgba(0,0,0,.55); font:11px/1.5 ui-monospace,Menlo,monospace; animation:enter .22s ease-out}
+  @keyframes enter{from{opacity:0; transform:translateY(8px)} to{opacity:1; transform:none}}
+  #card .head{display:flex; align-items:center; gap:7px; color:var(--faint); font-size:10px; letter-spacing:.05em}
+  #card .head i{width:8px; height:8px; border-radius:50%}
+  #card .x, #reader .x{margin-left:auto; background:none; border:0; color:var(--faint); font-size:16px; cursor:pointer; line-height:1}
+  #card h3{margin:6px 0 6px; font:600 14px ui-sans-serif,system-ui,sans-serif; color:var(--text)}
+  #card p{margin:0 0 8px; color:var(--muted)}
+  #card p.note-warn{color:var(--warn)}
+  #card .meta{color:var(--faint); font-size:10px; background:#0b0d10; border-radius:5px; padding:5px 7px; margin-bottom:8px; word-break:break-all}
+  #card .neigh{display:flex; flex-wrap:wrap; gap:4px 10px; margin-bottom:10px}
+  #card .neigh span{display:flex; align-items:center; gap:5px; color:var(--muted); cursor:pointer; font-size:10px}
+  #card .neigh span:hover{color:var(--text)}
+  #card .neigh i{width:6px; height:6px; border-radius:50%}
+  #card .actions{display:flex; gap:6px; flex-wrap:wrap}
+  #card .actions button{background:transparent; border:1px solid var(--border); color:var(--muted); border-radius:5px;
+                        padding:4px 9px; font:10px ui-monospace,Menlo,monospace; letter-spacing:.08em; text-transform:uppercase; cursor:pointer}
+  #card .actions button:hover{color:var(--text); border-color:#3a434d}
+  #card .actions .primary{background:var(--accent); border-color:var(--accent); color:#17120d; font-weight:600}
+  #reader{position:absolute; inset:14px; z-index:6; background:rgba(11,13,16,.98); border:1px solid #2a323b; border-radius:10px;
+          display:flex; flex-direction:column; box-shadow:0 20px 60px rgba(0,0,0,.6); animation:enter .2s ease-out}
+  #reader .head{display:flex; align-items:center; padding:10px 14px; border-bottom:1px solid var(--border);
+                font:11px ui-monospace,Menlo,monospace; color:var(--muted)}
+  #reader .runs{margin-left:14px; background:#0b0d10; color:var(--muted); border:1px solid var(--border); border-radius:5px;
+                font:10px ui-monospace,Menlo,monospace; padding:2px 6px; cursor:pointer}
+  #reader pre{margin:0; padding:14px 18px; overflow:auto; flex:1; font:12px/1.55 ui-monospace,Menlo,monospace;
+              color:#c9d1d9; white-space:pre-wrap}
+  [hidden]{display:none !important}
+
+  /* --- columnas laterales --- */
+  .routine{display:grid; grid-template-columns:auto 1fr auto; gap:8px; align-items:center; cursor:pointer;
+           padding:5px 0; border-bottom:1px solid rgba(255,255,255,.035); font-size:11px}
+  .routine:last-child{border-bottom:0}
+  .routine .name{color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .routine:hover .name{color:var(--accent)}
+  .routine .when{font-size:10px; color:var(--muted)}
+  .routine .result{grid-column:2 / 4; margin-top:-4px; font:10px ui-monospace,Menlo,monospace; color:var(--faint);
+                   overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .routine .result.bad{color:var(--bad)}
+  .client{display:grid; grid-template-columns:auto 1fr auto; gap:8px; align-items:center;
+          padding:5px 0; border-bottom:1px solid rgba(255,255,255,.035); font-size:11px}
+  .client:last-child{border-bottom:0}
+  .client .name{color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .client .name small{color:var(--faint); font:10px ui-monospace,Menlo,monospace; margin-left:6px}
+  .client .seen{font:10px ui-monospace,Menlo,monospace; color:var(--faint)}
+  @media (max-width:1100px){
+    body{overflow:auto; height:auto}
+    main{grid-template-columns:1fr}
+    .col{overflow:visible}
+    .center{height:78vh; min-height:460px; order:-1}
+    #card{width:auto; left:12px}
+  }
+  .statusbar{display:flex; gap:22px; flex-wrap:wrap; font:10px ui-monospace,Menlo,monospace; letter-spacing:.12em; text-transform:uppercase; color:var(--muted)}
+  .statusbar .item{display:flex; align-items:center; gap:7px}
+  .statusbar .pip{width:7px; height:7px; border-radius:50%; background:var(--ok)}
+  .statusbar .pip.warn{background:var(--warn)} .statusbar .pip.bad{background:var(--bad)}
+  .statusbar b{color:var(--text); font-weight:600} .statusbar small{color:var(--faint); text-transform:none; letter-spacing:0}
+  .pending{display:grid; grid-template-columns:auto 1fr auto; gap:8px; align-items:baseline; padding:5px 0; border-bottom:1px solid rgba(255,255,255,.035); font-size:11px}
+  .pending .kind{font:9px ui-monospace,Menlo,monospace; letter-spacing:.08em; text-transform:uppercase; color:var(--faint)}
+  a.pending{text-decoration:none;color:inherit} .pending .kind.vault{color:#b392f0} .pending .kind.routine{color:var(--bad)} .pending .kind.token{color:var(--warn)} .pending .kind.review{color:#79b8ff} .pending .kind.domain{color:#56d4dd}
+  .pending .text{color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .pending .days{font:10px ui-monospace,Menlo,monospace; color:var(--faint)}
+  .pending.open{cursor:pointer} .pending.open:hover .text{color:var(--accent)}
+  .more{font:10px ui-monospace,Menlo,monospace; color:var(--muted); cursor:pointer; padding:6px 0}
+  .kindBar{display:flex; height:4px; border-radius:2px; overflow:hidden; margin-top:10px; background:#1c2128}
+  .kindBar .vault{background:#b392f0} .kindBar .routine{background:var(--bad)} .kindBar .token{background:var(--warn)} .kindBar .review{background:#79b8ff}
+  .kindLegend{font:9px ui-monospace,Menlo,monospace; letter-spacing:.1em; color:var(--faint); margin-top:5px}
+</style>
+</head>
+<body>
+<header>
+  <div class="statusbar" id="status"></div>
+  <div class="chips" id="chips"></div>
+</header>
+
+<main>
+  <div class="col" id="left"></div>
+
+  <div class="center" id="graphBox">
+    <div class="title"><div class="t1">AGENT <em>OS</em></div><div class="t2" id="subtitle">cortex · memory</div></div>
+    <div class="toolbar">
+      <span class="lbl">view</span>
+      <div class="group">
+        <button class="btn on" data-view="rings">Rings</button>
+        <button class="btn" data-view="circle">Circle</button>
+        <button class="btn" data-view="domains">Domains</button>
+        <button class="btn" data-view="links">Links</button>
+        <button class="btn" data-view="timeline">Timeline</button>
+        <button class="btn" data-view="orbit">Orbit</button>
+      </div>
+      <div class="tools">
+        <span class="live no" id="live">delayed</span>
+        <button class="btn toggle" id="labels">labels</button>
+        <button class="btn toggle" id="motion">motion</button>
+        <div class="search"><input id="search" placeholder="search  /" autocomplete="off"><div id="results" hidden></div></div>
+        <button class="btn" id="fit" title="reset the view">fit</button>
+        <button class="btn" id="fullscreen" title="full screen">full screen</button>
+      </div>
+    </div>
+    <div class="legends">
+      <div class="legend" id="legend"></div>
+      <div class="legend types" id="types"></div>
+    </div>
+    <div class="canvasBox"><canvas id="canvas"></canvas></div>
+    <div class="footer" id="graphFooter"></div>
+    <div id="tip" hidden></div>
+    <div id="card" hidden></div>
+    <div id="reader" hidden><div class="head"><span class="path"></span><button class="x" title="close">×</button></div><pre></pre></div>
+  </div>
+
+  <div class="col" id="right"></div>
+</main>
+
+<script src="app.js?v=2026-10-13.1"></script>
+</body>
+</html>

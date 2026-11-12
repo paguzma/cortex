@@ -1,0 +1,5 @@
+#!/bin/sh
+# La zona horaria sale de la config: cambiarla en la UI reinicia este servicio.
+TZ=$(/usr/local/bin/python3 -c 'from cortex import config; print(config.load()["instance"]["timezone"])')
+export TZ
+exec /usr/local/bin/supercronic -inotify -passthrough-logs /data/state/routines/crontab 2>&1

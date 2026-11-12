@@ -1,0 +1,8 @@
+<table>
+  <thead><tr><th>Part</th><th>Status</th><th>Detail</th></tr></thead>
+  <tbody>
+  {% for row in rows %}
+    <tr><td>{{ row.name }}</td><td class="{{ {'ok': 'ok', 'warn': 'warn', 'fail': 'bad'}.get(row.status, 'muted') }}">{{ row.status }}</td><td>{{ row.detail }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
