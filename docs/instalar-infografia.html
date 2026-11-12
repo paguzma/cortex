@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <title>Instala cortex</title>
 <style>
-  @page { size: 210mm 412mm; margin: 0; }
+  @page { size: 210mm 458mm; margin: 0; }
   :root {
     --ink: #1d2433;
     --muted: #5b6475;
@@ -21,7 +21,7 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { background: var(--bg); }
   body {
-    width: 210mm; height: 412mm;
+    width: 210mm; height: 458mm;
     font-family: -apple-system, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
     color: var(--ink); font-size: 10.5pt; line-height: 1.45;
     padding: 14mm 14mm 10mm;
@@ -98,6 +98,13 @@
   .test h2 { grid-column: 1 / -1; font-size: 13pt; color: var(--ok); margin-bottom: -1mm; }
   .bubble { background: #fff; border-radius: 3mm; padding: 3mm 4mm; font-size: 9.6pt; }
   .bubble small { display: block; color: var(--muted); font-size: 8.4pt; margin-bottom: 1mm; }
+
+  .panel {
+    background: #f1ebfc; border: 1.5px solid #7a4fd6; border-radius: 4mm;
+    padding: 4.5mm 5mm; display: flex; gap: 5mm; align-items: center;
+  }
+  .panel h2 { font-size: 13pt; color: #7a4fd6; margin-bottom: 1mm; }
+  .panel p { color: #3a3150; }
 
   .tips { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 3mm; }
   .tip { background: var(--card); border: 1px solid var(--line); border-radius: 3mm; padding: 3.2mm 3.8mm; font-size: 9.3pt; color: #3c4557; }
@@ -201,9 +208,21 @@
   <div class="bubble"><small>Abre una conversación nueva y pregunta:</small>«¿Cuál es mi comida favorita?» Si responde pizza, cortex funciona.</div>
 </section>
 
+<section class="panel">
+  <svg width="64" height="64" viewBox="0 0 48 48" fill="none" stroke="#7a4fd6" stroke-width="2.4" stroke-linecap="round" style="flex:none">
+    <circle cx="24" cy="24" r="4" fill="#7a4fd6"/><circle cx="10" cy="14" r="3"/><circle cx="38" cy="12" r="3"/>
+    <circle cx="9" cy="35" r="3"/><circle cx="39" cy="36" r="3"/><circle cx="24" cy="6" r="2.5"/><circle cx="25" cy="42" r="2.5"/>
+    <path d="M21 22 12.5 15.5M27 22l8.5-8M21 26l-9.5 7.5M27 26l9.5 8M24 20v-11M24 28v11.5"/>
+  </svg>
+  <div>
+    <h2>Mira tu cerebro por dentro</h2>
+    <p>Al terminar, Claude te abre <b>tu panel</b> y te deja en el escritorio un acceso directo llamado <b>«Mi cerebro (cortex)»</b>. Ahí ves cada recuerdo como un punto, ordenados por tema, y cómo se iluminan cuando Claude lee o escribe. Para entrar usa la contraseña que Claude deja en <b>cortex-admin.txt</b>, en tu carpeta cortex. No la borres ni la compartas.</p>
+  </div>
+</section>
+
 <section class="tips">
   <div class="tip"><b>Docker abierto</b>Cortex funciona mientras Docker Desktop esté abierto. Claude lo deja arrancando solo al prender el computador.</div>
-  <div class="tip"><b>Tu contraseña</b>Claude te deja una contraseña de administración en la carpeta cortex. No la borres ni la compartas.</div>
+  <div class="tip"><b>Se usa conversando</b>El panel es para mirar. Para guardar o recordar algo, simplemente pídeselo a Claude en la pestaña Code.</div>
   <div class="tip"><b>Si algo falla</b>Cuéntale a Claude qué ves, o pégale el mensaje de error. Si se traba, escríbele a quien te pasó esto.</div>
 </section>
 

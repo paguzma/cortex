@@ -14,7 +14,7 @@ nunca sabe qué es una terminal, Docker ni un archivo JSON, y no tiene que apren
   largas avísalas («esto tarda unos 5 minutos»).
 - No muestres tokens ni contraseñas en tus mensajes. Van a archivos, no al chat.
 - No toques nada fuera de: Docker Desktop, Python, `~/.claude/settings.json`, el contenedor
-  `cortex` y la carpeta donde estás trabajando. No cambies otras configuraciones del sistema.
+  `cortex`, la carpeta donde estás trabajando y un acceso directo en el escritorio (paso 6). No cambies otras configuraciones del sistema.
 - Lleva el avance en `cortex-instalacion.md` en la carpeta de trabajo (qué pasos terminaste).
   Si la persona vuelve después de reiniciar y te dice «continúa», léelo y sigue desde ahí.
 - Si algo falla dos veces seguidas, no improvises: dile en simple qué pasó y que le escriba a
@@ -126,8 +126,18 @@ Si `py -3 --version` falla, instala Python:
 
 ### 6. Terminar
 
-1. Marca la instalación como terminada en `cortex-instalacion.md`.
-2. Explícale a la persona, en simple:
+1. Crea en el escritorio un acceso directo **«Mi cerebro (cortex)»** al panel
+   `http://127.0.0.1:8700/os/` (el puerto que usaste). En Windows es un archivo
+   `Mi cerebro (cortex).url` con `[InternetShortcut]` y `URL=…`; búscale el escritorio real
+   con `[Environment]::GetFolderPath("Desktop")`, que puede estar dentro de OneDrive. En Mac,
+   un `.webloc`. Es lo único que creas fuera de las rutas permitidas arriba.
+2. Abre el panel en su navegador (`start` en Windows, `open` en Mac) para que lo vea.
+3. Marca la instalación como terminada en `cortex-instalacion.md`.
+4. Explícale a la persona, en simple:
+   - Que el panel que acaba de abrirse es **su cerebro visto desde afuera**: cada nota es un
+     punto, se ordenan por temas y se iluminan cuando Claude lee o escribe. Entra con la
+     contraseña de `cortex-admin.txt` y lo vuelve a abrir con el acceso directo del escritorio.
+     Es solo para mirar; la memoria se usa conversando con Claude.
    - Que ya está. Que abra una **conversación nueva** en Code (las conexiones se cargan al
      empezar una conversación).
    - Si no pudiste instalar los plugins en el paso 4.3: que en esa conversación nueva escriba
